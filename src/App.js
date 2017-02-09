@@ -7,7 +7,7 @@ export default class App extends Component {
   constructor(props) {
     super(props);
 
-    this.state = { data: '', error: '' };
+    this.state = { data: '', error: '', contentType: '' };
     this.getData = this.getData.bind(this);
   }
 
@@ -17,7 +17,10 @@ export default class App extends Component {
 
   getData() {
     fetch(`${BASE_URL}/api/binary`)
-      .then((res) => res.text())
+      .then((res) => {
+        this.setState({ contentType: res.headers.map['content-type'] });
+        return res.text()
+      })
       .then((res) => {
         console.log('res received from api', res);
         this.setState({ data: res });
@@ -29,10 +32,13 @@ export default class App extends Component {
   }
 
   render() {
-    const { data, error } = this.state;
+    const { data, error, contentType } = this.state;
 
     return (
       <View style={styles.container}>
+        <Text style={styles.text}>
+          Content-Type: {contentType}
+        </Text>
         <Text style={styles.text}>
           Data: {data}
         </Text>
