@@ -1,24 +1,43 @@
 import React, { Component } from 'react';
-import {
-  AppRegistry,
-  StyleSheet,
-  Text,
-  View
-} from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+
+const BASE_URL = 'http://localhost:3030';
 
 export default class App extends Component {
+  constructor(props) {
+    super(props);
+
+    this.state = { data: '', error: '' };
+    this.getData = this.getData.bind(this);
+  }
+
+  componentWillMount() {
+    this.getData()
+  }
+
+  getData() {
+    fetch(`${BASE_URL}/api/binary`)
+      .then((res) => res.text())
+      .then((res) => {
+        console.log('res received from api', res);
+        this.setState({ data: res });
+      })
+      .catch((error) => {
+        console.log('Error fetching from api', error);
+        this.setState({ error });
+      });
+  }
+
   render() {
+    const { data, error } = this.state;
+
     return (
       <View style={styles.container}>
-        <Text style={styles.welcome}>
-          Hello
+        <Text style={styles.text}>
+          Data: {data}
         </Text>
-        <Text style={styles.instructions}>
-          To get started, edit index.ios.js
-        </Text>
-        <Text style={styles.instructions}>
-          Press Cmd+R to reload,{'\n'}
-          Cmd+D or shake for dev menu
+        <Text style={styles.text}>
+          Error: {error}
         </Text>
       </View>
     );
@@ -32,14 +51,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F5FCFF',
   },
-  welcome: {
+  text: {
     fontSize: 20,
     textAlign: 'center',
     margin: 10,
-  },
-  instructions: {
-    textAlign: 'center',
-    color: '#333333',
-    marginBottom: 5,
-  },
+  }
 });
