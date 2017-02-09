@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "express": "^4.14.1",
+    "protobufjs": "^6.6.3",
     "react": "15.4.2",
     "react-native": "0.41.2"
   },

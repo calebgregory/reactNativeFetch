@@ -1,0 +1,17 @@
+package data;
+syntax = "proto3";
+
+service Messager {
+  rpc SendMsg(MsgRequest) returns (MsgReply) {}
+}
+
+message MsgRequest {
+  string caller = 1;
+  string text = 2;
+}
+
+message MsgReply {
+  string caller = 1;
+  string response = 2;
+  MsgRequest request = 3;
+}
