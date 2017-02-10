@@ -2,7 +2,7 @@ package data;
 syntax = "proto3";
 
 service Messager {
-  rpc SendMsg(MsgRequest) returns (MsgReply) {}
+  rpc SendMsg(MsgRequest) returns (MsgReply);
 }
 
 message MsgRequest {
