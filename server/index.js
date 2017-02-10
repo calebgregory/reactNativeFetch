@@ -1,16 +1,10 @@
 const path = require('path');
 const express = require('express');
-const protobuf = require('protobufjs');
+const proto = require('./proto');
+const bodyParser = require('body-parser');
 
 const app = express();
-
-/* Load protocol buffer root */
-let root = false;
-protobuf.load(path.resolve(__dirname, './data.proto'), (err, _root) => {
-  if (err) throw err;
-
-  root = _root;
-});
+app.use(bodyParser.json())
 
 function init(root, app, protobufs) {
   const server = getServer(root, protobufs)
@@ -30,13 +24,18 @@ function init(root, app, protobufs) {
   });
 }
 
-function getServer(root /* protobuf */, protobufs /* [protobuf_name, [[service_name, service_methods]]] */) {
+/**
+ * @param root      - generated code using protobufs
+ * @param protobufs - formatted [ protobuf_name, servers ],
+ *                    servers formatted [ server_name, server_methods ]
+ *                    server_methods formatted { method_name: (ctx:Object, req:Object, callback:Function) }
+ */
+function getServer(root, protobufs) {
   const server = protobufs
-    .reduce((acc, [protobufName, [serviceName, methods] ]) => {
+    .reduce((acc, [ protobufName, [serviceName, serviceMethods] ]) => {
       const servicePath = `${protobufName}.${serviceName}`;
-      const Service = root.lookup(servicePath);
       const service = {
-        [`/${servicePath}/`]: Service.create(methods)
+        [`/${servicePath}/`]: root[protobufName][`${serviceName}Server`].create(serviceMethods)
       };
 
       return Object.assign( {}, acc, service );
@@ -50,10 +49,14 @@ function getHandler(server) {
     const service = req.headers['x-rpc-service'];
     const method  = req.headers['x-rpc-method'];
 
+    if (!server[service] || !server[service][method]) {
+      return res.sendStatus(404)
+    }
+    const ctx = {}; // if we had req.user, e.g., it would go on here
+
     try {
-      const ctx = {};
       server[service][method](ctx, req.body)
-        .then((resp) => {
+        .then((resp) => { // <- byte buffer
           res.send(resp);
         })
         .catch((error) => {
@@ -68,7 +71,7 @@ function getHandler(server) {
 }
 
 /* Service Implementations, formated [service_name, { methods }] */
-const messagerService = [ 'Messager', {
+const messager = [ 'Messager', {
   sendMsg: (ctx, request, cb) => {
     // just send back a simple response 'ok'.
     return cb(null, { caller: 'server', response: 'ok', request });
@@ -77,21 +80,7 @@ const messagerService = [ 'Messager', {
 
 /* array of tuples [protobuf_name, service_tuples] */
 const protobufs = [
-  ['data', messagerService]
+  ['data', messager]
 ];
 
-function tryInit([t0, t1], n) {
-  if (n > 10) {
-    console.log("Tried 10 times and still no root. Sorry.")
-    return;
-  }
-
-  if (root) {
-    init(root, app, protobufs);
-    return;
-  }
-
-  setTimeout(() => tryInit([t1, t0 + t1], n + 1), t1)
-}
-
-tryInit([0, 100], 0)
+init(proto, app, protobufs);

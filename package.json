@@ -7,6 +7,7 @@
     "test": "jest"
   },
   "dependencies": {
+    "body-parser": "^1.16.0",
     "express": "^4.14.1",
     "protobufjs": "git://github.com/Kenny-House/protobuf.js#server",
     "react": "15.4.2",
