@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-const BASE_URL = 'http://localhost:3030';
+import messager from './request';
 
 export default class App extends Component {
   constructor(props) {
     super(props);
 
-    this.state = { data: '', error: '', contentType: '' };
+    this.state = { response: '', caller: '', error: '', request: { caller: '', text: '' } };
     this.getData = this.getData.bind(this);
   }
 
@@ -16,31 +16,30 @@ export default class App extends Component {
   }
 
   getData() {
-    fetch(`${BASE_URL}/api/binary`)
-      .then((res) => {
-        this.setState({ contentType: res.headers.map['content-type'] });
-        return res.text()
-      })
-      .then((res) => {
-        console.log('res received from api', res);
-        this.setState({ data: res });
-      })
-      .catch((error) => {
-        console.log('Error fetching from api', error);
+    messager.sendMsg({ caller: 'react-native', text: 'hello mother fucker' }, (error, resp) => {
+      console.log(`\n\n ** calll made to api ** \n\n error ${error} \n resp ${JSON.stringify(resp, null, 2)}`);
+      if (error) {
         this.setState({ error });
+        return;
+      }
+
+      this.setState({
+        caller   : resp.caller,
+        response : resp.response,
       });
+    })
   }
 
   render() {
-    const { data, error, contentType } = this.state;
+    const { response, caller, error, request } = this.state;
 
     return (
       <View style={styles.container}>
         <Text style={styles.text}>
-          Content-Type: {contentType}
+          Response text: {response}
         </Text>
         <Text style={styles.text}>
-          Data: {data}
+          Response caller: {caller}
         </Text>
         <Text style={styles.text}>
           Error: {error}
