@@ -39,8 +39,8 @@ const protobufs = [
  * serve and listen, routing /api calls to handler
  */
 function init(root, app, protobufs) {
-  const server = getServer(root, protobufs)
-  const handle = getHandler(server)
+  const server  = getServer(root, protobufs)
+  const handler = getHandler(server)
 
   app.use('/api', handler);
 
