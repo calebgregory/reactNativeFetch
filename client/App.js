@@ -16,7 +16,7 @@ export default class App extends Component {
   }
 
   getData() {
-    messager.sendMsg({ caller: 'react-native', text: 'hello mother fucker' }, (error, resp) => {
+    messager.sendMsg({ caller: 'react-native', text: 'YESSSSSSSSSSS' }, (error, resp) => {
       console.log(`\n\n ** calll made to api ** \n\n error ${error} \n resp ${JSON.stringify(resp, null, 2)}`);
       if (error) {
         this.setState({ error });
@@ -26,6 +26,7 @@ export default class App extends Component {
       this.setState({
         caller   : resp.caller,
         response : resp.response,
+        request  : resp.request
       });
     })
   }
@@ -35,6 +36,12 @@ export default class App extends Component {
 
     return (
       <View style={styles.container}>
+        <Text style={styles.text}>
+          Request Caller: {request.caller}
+        </Text>
+        <Text style={styles.text}>
+          Request Text: {request.text}
+        </Text>
         <Text style={styles.text}>
           Response text: {response}
         </Text>

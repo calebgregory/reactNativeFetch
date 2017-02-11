@@ -26,17 +26,23 @@ const messager = [ 'Messager', {
   }
 } ];
 
-/* array of tuples, formatted [protobuf_name, service_tuple] */
+/*
+ * array of tuples, formatted
+ *   [ protobuf_name, service_tuple ]
+ * (see above for service_tuple format)
+ */
 const protobufs = [
   ['data', messager]
 ];
 
-/* serve and listen, routing /api calls to handler */
+/*
+ * serve and listen, routing /api calls to handler
+ */
 function init(root, app, protobufs) {
   const server = getServer(root, protobufs)
   const handle = getHandler(server)
 
-  app.use('/api', handle);
+  app.use('/api', handler);
 
   app.listen('3030', (err) => {
     if (err) {
@@ -73,13 +79,15 @@ function getServer(root, protobufs) {
  *   {
  *     [service_path]: ProtobufService
  *   }
+ *
  * , e.g.,
+ *
  *   {
  *     "/root.Messager/": Service { ... SendMsg() {...} ... }
  *   }
  */
 function getHandler(server) {
-  return function handle(req, res) {
+  return function handler(req, res) {
     const service = req.headers['x-rpc-service'];
     const method  = req.headers['x-rpc-method'];
 
@@ -106,4 +114,7 @@ function getHandler(server) {
   }
 }
 
+/*
+ * vroom vroom, motherfuckers
+ */
 init(proto, app, protobufs);
