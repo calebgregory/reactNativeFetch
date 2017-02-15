@@ -1,40 +1,94 @@
-import proto from '../proto';
+const generateHttpRpcImpl = require('./rpc-impl/http');
+
+const SUPPORTED_TRANSPORT_TYPES = [ 'http' ];
+
+/**
+ * @param root - generated protobuf code
+ * @param services - list of services, formatted [{ protobufName, serviceName }]
+ * @param config - configuration for transport layer
+ *    options:
+ *      - transportType _default "http"_
+ *      - url           if trasnportType = 'http', url endpoint of server API (required)
+ *      - auth          object <- { type: 'basic', apiKey<String>, apiSecret<String> },
+ *                                { type: 'token', token<String> }
+ *                       _default { type: 'none' }_
+ *      - respDecorator decorator function wrapping the callback, to do something with
+ *                      the response before returning response.body to the caller
+ *                      _default function(next) { return next; }_. for example, you will
+ *                      want to use this to respond to receiving response with header
+ *                      "X-Token-Will-Expire-In-T-Minutes".
+ *
+ * @return interface - returns request fan-in object, with camelcased method names,
+ *   generated from the services param and config object.
+ */
+function create(root, services, config) {
+  // declare default options
+  config = Object.assign({}, config, {
+    transportType : config.transportType || 'http',
+    auth          : config.auth || { type: 'none' },
+  });
+
+  // validate these options
+  validate(config);
+
+  const clients = services.reduce((acc, s) => {
+    const service = createClient(root, s.protobufName, s.serviceName, config);
+    const methodName = camelize(s.serviceName);
+    acc[ methodName ] = service;
+    return acc;
+  }, {})
+
+  return clients;
+}
+
+function validate(config) {
+  let errors = [];
+  if (SUPPORTED_TRANSPORT_TYPES.indexOf(config.transportType) < 0) {
+    errors.push(new Error(`Invalid transport type: "${config.transportType}". transportType must be one of ${SUPPORTED_TRANSPORT_TYPES}.`));
+  }
+  if (config.transportType === 'http' && !config.url) {
+    errors.push(new Error('Given transportType = "http", but no url provided. Please provide a url in the config.'));
+  }
+
+  if (errors.length > 0) {
+    throw errors;
+  }
+}
+
+function camelize(str) {
+  return `${str[0].toLowerCase()}${str.slice(1)}`;
+}
+
+function createClient(root, protobufName, serviceName, config) {
+  const rpcImpl = generateRpcImpl(protobufName, serviceName, config);
+
+  return root[protobufName][serviceName].create(rpcImpl, false, false);
+}
+
+function generateRpcImpl(protobufName, serviceName, config) {
+  const servicePath = `/${protobufName}.${serviceName}/`;
+
+  switch (config.transportType) {
+    case 'http': // 'http' is default value for transportType (see `create`)
+      const httpRpcImpl = generateHttpRpcImpl(servicePath, config);
+      return httpRpcImpl;
+  }
+}
+
+/* ################################################## */
+
+import root from '../proto';
 
 const API_URL = 'http://localhost:3030/api';
 
-function createClient(protobufName, serviceName) {
-  const servicePath = `/${protobufName}.${serviceName}/`;
+var services = [
+  {protobufName: 'data', serviceName: 'Messager'}
+];
 
-  function rpcImpl(method, requestData, callback) {
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', API_URL);
-    xhr.responseType = 'arraybuffer'; // we'll be getting back an ArrayBuffer
+var options = {
+  transportType   : 'http',
+  url             : API_URL
+};
 
-    xhr.setRequestHeader('X-Rpc-Service', servicePath);
-    xhr.setRequestHeader('X-Rpc-Method', method);
-    xhr.setRequestHeader('Content-Type', 'application/octet-stream');
-
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === XMLHttpRequest.DONE) {
-        if (xhr.status === 200) {
-          // we must convert the response to an ArrayBufferView before
-          // protobufs can use it
-          const msg = new Uint8Array(xhr.response);
-          callback(null, msg);
-        } else {
-          callback(`error making request to ${method}`, null);
-        }
-      }
-    }
-
-    // msg must be a string to go over the wire; a simple string conversion
-    // will not do, as bytes in the requestData will be truncated (_believe me_)
-    var msg = String.fromCharCode.apply(null, new Uint8Array(requestData));
-    xhr.send(msg);
-  }
-
-  return proto[protobufName][serviceName].create(rpcImpl, false, false);
-}
-
-var messager = createClient('data', 'Messager');
-export default messager;
+const client = create(root, services, options)
+export default client;

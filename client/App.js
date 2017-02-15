@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import messager from './request';
+import rpcClient from './rpcClient';
 
 export default class App extends Component {
   constructor(props) {
@@ -16,7 +16,7 @@ export default class App extends Component {
   }
 
   getData() {
-    messager.sendMsg({ caller: 'react-native', text: 'YESSSSSSSSSSS' }, (error, resp) => {
+    rpcClient.Messager.sendMsg({ caller: 'react-native', text: 'YESSSSSSSSSSS' }, (error, resp) => {
       console.log(`\n\n ** calll made to api ** \n\n error ${error} \n resp ${JSON.stringify(resp, null, 2)}`);
       if (error) {
         this.setState({ error });

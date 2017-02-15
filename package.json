@@ -11,7 +11,8 @@
     "express": "^4.14.1",
     "protobufjs": "git://github.com/Kenny-House/protobuf.js#server",
     "react": "15.4.2",
-    "react-native": "0.41.2"
+    "react-native": "0.41.2",
+    "satchel-rpc": "git+ssh://github.com/satchelhealth/satchel-rpc.git#master"
   },
   "devDependencies": {
     "babel-jest": "18.0.0",
